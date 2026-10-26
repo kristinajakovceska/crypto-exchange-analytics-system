@@ -1,0 +1,22 @@
+services:
+  ta:
+    image: <kristinajakovcheska>/ta:latest
+
+  forecast:
+    image: <kristinajakovcheska>/forecast:latest
+
+  sentiment:
+    image: <kristinajakovcheska>/sentiment:latest
+
+  main_app:
+    image: <kristinajakovcheska>/main_app:latest
+    ports:
+      - "8000:8000"
+    environment:
+      TA_URL: "http://ta:8001"
+      FORECAST_URL: "http://forecast:8002"
+      SENTIMENT_URL: "http://sentiment:8003"
+    depends_on:
+      - ta
+      - forecast
+      - sentiment

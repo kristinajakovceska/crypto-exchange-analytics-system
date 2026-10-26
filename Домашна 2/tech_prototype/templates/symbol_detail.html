@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Home</a> · <a href="/symbols">Symbols</a> · {{ meta.symbol }}
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>Symbol details</h2>
+        <p><strong>Symbol.</strong> {{ meta.symbol }}</p>
+        <p><strong>Base asset.</strong> {{ meta.base_asset }}</p>
+        <p><strong>Quote asset.</strong> {{ meta.quote_asset }}</p>
+        <p><strong>Date range.</strong> {{ meta.first_date }} to {{ meta.last_date }}</p>
+        <p><strong>Rows in database.</strong> {{ meta.num_rows }}</p>
+        <p class="muted">Use the JSON API. /api/candles/{{ meta.symbol }} or /api/analytics/{{ meta.symbol }}</p>
+    </div>
+    <div class="card">
+        <h2>Analytics placeholder</h2>
+        <p>This area can show charts or metrics in later iterations.</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Recent candles</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Open</th>
+            <th>High</th>
+            <th>Low</th>
+            <th>Close</th>
+            <th>Volume</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for c in candles %}
+            <tr>
+                <td>{{ c.date }}</td>
+                <td>{{ "%.4f"|format(c.open) }}</td>
+                <td>{{ "%.4f"|format(c.high) }}</td>
+                <td>{{ "%.4f"|format(c.low) }}</td>
+                <td>{{ "%.4f"|format(c.close) }}</td>
+                <td>{{ "%.4f"|format(c.volume) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,202 @@
+<!-- analytics_api/templates/login.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login • Crypto Exchange Analytics System</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root{
+      --bg:#efeae4;
+      --panel:#ffffff;
+      --beige:#eee8e1;
+      --teal:#0f645f;
+      --teal-700:#0c4f4b;
+      --muted:#6e7d7b;
+      --shadow:0 12px 24px rgba(0,0,0,.10);
+      --radius:18px;
+      --chip:#e6e1db;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      min-height:100vh;
+      background:var(--bg);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:#0f2322;
+    }
+
+    /* Left half */
+    .left{
+      background:var(--beige);
+      padding:40px 44px;
+      display:flex;
+      flex-direction:column;
+      gap:28px;
+    }
+    .brand-wrap{display:flex;align-items:center;gap:16px}
+    .brand-logo{
+      width:290px; height:auto; display:block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.06));
+    }
+    .welcome{
+      margin-top:10px;
+      font-size:56px;
+      letter-spacing:.5px;
+      color:var(--teal);
+      font-weight:900;
+    }
+    .hint{color:#2c4c49;font-size:18px;margin-top:-14px}
+    .cta{
+      margin-top:6px;
+      background:#ded9d3;
+      color:#1f3f3c;
+      border:none; cursor:pointer;
+      font-weight:800; font-size:26px;
+      padding:14px 34px;
+      border-radius:16px;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.05);
+      transition:transform .06s ease;
+      width:220px;
+    }
+    .cta:active{transform:translateY(1px)}
+
+    /* Right half */
+    .right{
+      background:var(--panel);
+      display:flex; align-items:center; justify-content:center;
+      padding:40px 24px;
+    }
+    .card{
+      width:min(420px, 88vw);
+      background:#fff;
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:26px 26px 22px;
+    }
+    .title{
+      text-align:center;
+      font-size:48px;
+      letter-spacing:.6px;
+      color:var(--teal);
+      font-weight:900;
+      margin:4px 0 16px;
+    }
+    label{display:block;font-weight:700;color:#355f5c;margin:6px 4px 6px}
+    .field{
+      width:100%;
+      background:#f3efea;
+      border:1px solid #d9d3cc;
+      border-radius:12px;
+      padding:14px 14px;
+      font-size:16px;
+      outline:none;
+    }
+    .field:focus{border-color:#b5ccc9}
+    .error{color:#b94b4b;font-size:13px;margin:6px 4px 0;display:none}
+    .btn{
+      width:100%;
+      margin-top:18px;
+      background:var(--teal);
+      color:#e9f6f4;
+      border:none;
+      border-radius:26px;
+      padding:14px 16px;
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:.4px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.16);
+    }
+    .muted{color:var(--muted)}
+
+    /* Split line mimic */
+    .split{
+      position:fixed; top:0; bottom:0; left:50%;
+      width:1px; background:transparent;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0); /* reserved if you need a divider */
+    }
+
+    @media (max-width: 980px){
+      body{grid-template-columns:1fr}
+      .split{display:none}
+      .left{order:1}
+      .right{order:2}
+      .welcome{font-size:40px}
+    }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <div class="brand-wrap">
+      <!-- Wide logo -->
+      <img class="brand-logo" src="{{ url_for('static', path='brand/logo-full.jpg') }}" alt="Crypto Exchange Analytics System">
+    </div>
+
+    <div class="welcome">WELCOME !</div>
+    <div class="hint">Don’t have an account?</div>
+    <button class="cta" id="btnSign">Sign in</button>
+  </div>
+
+  <div class="split" aria-hidden="true"></div>
+
+  <div class="right">
+    <form class="card" id="loginForm" novalidate>
+      <div class="title">LOGIN</div>
+
+      <label for="username" class="muted">USERNAME</label>
+      <input id="username" name="username" class="field" autocomplete="username" required />
+      <div id="errUser" class="error">Please enter your username.</div>
+
+      <label for="password" class="muted">PASSWORD</label>
+      <input id="password" name="password" type="password" class="field" autocomplete="current-password" required />
+      <div id="errPass" class="error">Please enter your password.</div>
+
+      <button type="submit" class="btn">LOGIN</button>
+    </form>
+  </div>
+
+  <script>
+    // Fake sign-in route placeholder
+    document.getElementById('btnSign').addEventListener('click', () => {
+      // If you later add /register, change this href
+      alert('Sign in flow placeholder. Wire this to /register when available.');
+    });
+
+    // Minimal client-side validation + redirect to /home
+    const form   = document.getElementById('loginForm');
+    const userEl = document.getElementById('username');
+    const passEl = document.getElementById('password');
+    const errU   = document.getElementById('errUser');
+    const errP   = document.getElementById('errPass');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      let ok = true;
+      if (!userEl.value.trim()){
+        errU.style.display = 'block'; ok = false;
+      } else errU.style.display = 'none';
+
+      if (!passEl.value.trim()){
+        errP.style.display = 'block'; ok = false;
+      } else errP.style.display = 'none';
+
+      if (!ok) return;
+
+      // Simulated login. Store a flag, then go to Home.
+      localStorage.setItem('ce_logged_in', '1');
+      window.location.href = "{{ url_for('home') }}";
+    });
+
+    // Hide errors on input
+    [userEl, passEl].forEach(el => el.addEventListener('input', () => {
+      document.getElementById('err' + (el === userEl ? 'User' : 'Pass')).style.display = 'none';
+    }));
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ title if title else "Crypto Exchange Analytics System" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+  <div class="layout">
+    <!-- Left rail -->
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="{{ url_for('static', path='brand/logo-mark.png') }}" alt="CE" />
+      </div>
+      <div class="sidebar-user">
+        <div class="user-title">User</div>
+        <div class="user-meta">
+          <div>Account Info</div>
+          <div>Crypto Id:</div>
+          <div>Registration Info:</div>
+          <div class="muted small">Verification:</div>
+          <div class="muted small">Security:</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Top tabs -->
+    <nav class="navbar">
+      {% set p = request.url.path %}
+      <a class="pill {{ 'active' if p in ['/', '/home'] else '' }}" href="{{ url_for('home') }}">Home</a>
+      <a class="pill {{ 'active' if p.startswith('/symbols') else '' }}" href="{{ url_for('symbols_page') }}">Symbols</a>
+    </nav>
+
+    <!-- Main content -->
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

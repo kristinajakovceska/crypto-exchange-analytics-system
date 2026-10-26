@@ -1,0 +1,18 @@
+# virtual env
+.venv
+.venv1
+
+# python
+__pycache__/
+*.pyc
+
+# pycharm
+.idea/
+
+# data / generated files
+*.db
+*.sqlite
+*.csv
+
+# env
+.env

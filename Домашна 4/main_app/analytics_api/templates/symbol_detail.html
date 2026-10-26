@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% set title = symbol ~ " analytics" %}
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="card" style="
+    background:#e7f1f0;
+    border-radius:18px;
+    box-shadow: var(--shadow);
+    padding:18px;
+    margin-bottom:16px;">
+  <div style="text-align:center;color:#0f645f;font-weight:900;font-size:28px;letter-spacing:.3px;margin-bottom:8px">
+    Symbol details
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;color:#0b4b47;font-weight:700">
+    <div>Symbol. <span class="strong">{{ symbol }}</span></div>
+    <div>Base asset. <span class="strong">{{ base }}</span></div>
+    <div>Quote asset. <span class="strong">{{ quote }}</span></div>
+    <div>Date range. <span class="strong">{{ min_d }}</span> to <span class="strong">{{ max_d }}</span></div>
+  </div>
+</div>
+
+<div class="symbol-actions">
+<a class="btn-download" href="{{ url_for('ta_html', symbol=symbol) }}?timeframe=1d">Technical Analysis</a>
+<a class="btn-download" href="{{ url_for('predict_html', symbol=symbol) }}?lookback=30&horizon=30">LSTM Forecast</a>
+<a class="btn-download" href="{{ url_for('sentiment_html', symbol=symbol) }}">On-chain &amp; Sentiment</a>
+</div>
+
+<div style="height:16px"></div>
+<!-- ================= ANALYTICS ================= -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px">
+
+  <!-- ===== PRICE TREND ===== -->
+  <div class="card">
+    <h3 style="margin:0 0 10px;color:#0f645f;text-align:center;">Price Trend</h3>
+    <div id="lineWrap" style="width:100%;height:180px"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
+      <div class="pill light" style="justify-self:center">Last close: <b id="k_last">—</b></div>
+      <div class="pill light" style="justify-self:center">Change: <b id="k_change">—</b></div>
+      <div class="pill light" style="justify-self:center">30d High: <b id="k_high">—</b></div>
+      <div class="pill light" style="justify-self:center">30d Low: <b id="k_low">—</b></div>
+    </div>
+  </div>
+
+  <!-- ===== VOLUME DISTRIBUTION ===== -->
+  <div class="card">
+    <h3 style="margin:0 0 10px;color:#0f645f;text-align:center;">Volume Distribution</h3>
+    <div id="pieWrap" style="width:100%;height:180px"></div>
+    <ul id="vol_legend"
+        style="list-style:none;padding:0;margin:10px 0 0;
+               display:grid;grid-template-columns:repeat(2,1fr);
+               gap:6px;font-size:14px"></ul>
+    <div id="vol_summary" class="muted" style="text-align:center;margin-top:6px"></div>
+  </div>
+
+  <!-- ===== SUMMARY ===== -->
+  <div class="card" style="text-align:center;">
+    <h3 style="margin:0 0 10px;color:#0f645f;">Summary</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      {% set closes = table | map(attribute='close') | list %}
+      {% set highs = table | map(attribute='high') | list %}
+      {% set lows = table | map(attribute='low') | list %}
+      {% set vols = table | map(attribute='volume') | list %}
+      <tr><td style="padding:8px;">Average Close</td><td><b>{{ '%.2f'|format((closes|sum)/(closes|length)) }}</b></td></tr>
+      <tr><td style="padding:8px;">Highest High</td><td><b>{{ '%.2f'|format(highs|max) }}</b></td></tr>
+      <tr><td style="padding:8px;">Lowest Low</td><td><b>{{ '%.2f'|format(lows|min) }}</b></td></tr>
+      <tr><td style="padding:8px;">Total Volume</td><td><b>{{ '{:,.0f}'.format(vols|sum) }}</b></td></tr>
+    </table>
+  </div>
+</div>
+
+
+<!-- ================= RECENT CANDLES ================= -->
+<h1 class="page-title" style="font-size:32px;margin-top:0">Recent candles</h1>
+<div class="table card" style="padding:0;">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Volume</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in table %}
+      <tr>
+        <td>{{ r.date }}</td>
+        <td>{{ '%.2f'|format(r.open) }}</td>
+        <td>{{ '%.2f'|format(r.high) }}</td>
+        <td>{{ '%.2f'|format(r.low) }}</td>
+        <td>{{ '%.2f'|format(r.close) }}</td>
+        <td>{{ '{:,.0f}'.format(r.volume) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ================= DATA ================= -->
+<script id="rows-json" type="application/json">
+{{ table | tojson }}
+</script>
+
+<script>
+  const rows = JSON.parse(document.getElementById('rows-json').textContent);
+  const closes  = rows.map(r => r.close).reverse();
+  const volumes = rows.map(r => r.volume).reverse();
+  const dates   = rows.map(r => r.date).reverse();
+
+  const fmt2 = v => (v==null ? '' : Number(v).toLocaleString(undefined,{maximumFractionDigits:2}));
+  const fmt0 = v => (v==null ? '' : Number(v).toLocaleString());
+  const pct  = v => (v==null ? '' : (v>0?'+':'') + (v*100).toFixed(2) + '%');
+
+  function drawSparkline() {
+    const wrap = document.getElementById('lineWrap');
+    const W = (wrap.clientWidth || 640), H = 180, P = 16;
+    const data = closes.slice(-30);
+    const dtx  = dates.slice(-30);
+    wrap.innerHTML = '';
+    if (!data.length) return;
+
+    const last = data[data.length-1];
+    const prev = data.length > 1 ? data[data.length-2] : last;
+    const chg  = last - prev;
+    const chgPct = prev ? chg / prev : 0;
+    const hi = Math.max(...data);
+    const lo = Math.min(...data);
+
+    document.getElementById('k_last').textContent   = fmt2(last);
+    document.getElementById('k_change').textContent = `${fmt2(chg)} . ${pct(chgPct)}`;
+    document.getElementById('k_high').textContent   = fmt2(hi);
+    document.getElementById('k_low').textContent    = fmt2(lo);
+
+    const span = (hi - lo) || 1;
+    const step = (W - 2*P) / Math.max(1, data.length - 1);
+    const pts  = data.map((v,i) => {
+      const x = P + i*step;
+      const y = H - P - ((v - lo)/span) * (H - 2*P);
+      return `${x},${y}`;
+    }).join(' ');
+
+    wrap.innerHTML =
+      `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+         <defs>
+           <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+             <stop offset="0%" stop-color="#0f645f" stop-opacity=".18"/>
+             <stop offset="100%" stop-color="#0f645f" stop-opacity="0"/>
+           </linearGradient>
+         </defs>
+         <polyline points="${pts}" fill="none" stroke="#0f645f" stroke-width="2" />
+         <polygon points="${P},${H-P} ${pts} ${W-P},${H-P}" fill="url(#fillGrad)" />
+         <text x="${P}" y="${H-4}" font-size="11" fill="#5b6b6b">${dtx[0] || ''}</text>
+         <text x="${W-P-2}" y="${H-4}" font-size="11" text-anchor="end" fill="#5b6b6b">${dtx[dtx.length-1] || ''}</text>
+       </svg>`;
+  }
+
+  function drawPie() {
+    const wrap = document.getElementById('pieWrap');
+    const W = (wrap.clientWidth || 320), H = 180;
+    const R = Math.min(W, H)/2 - 10, CX = W/2, CY = H/2;
+    const n  = Math.min(6, volumes.length);
+    const vals = volumes.slice(-n);
+    const dtx  = dates.slice(-n);
+    wrap.innerHTML = '';
+    if (!vals.length) return;
+
+    const total = vals.reduce((a,b)=>a+b, 0) || 1;
+    const colors = ['#0f645f','#1c6a65','#3c807a','#5b958f','#7cab9f','#9cc0b4'];
+
+    let a0 = -Math.PI/2, segs = '';
+    for (let i=0;i<n;i++){
+      const a1 = a0 + 2*Math.PI*(vals[i]/total);
+      const x0 = CX + R*Math.cos(a0), y0 = CY + R*Math.sin(a0);
+      const x1 = CX + R*Math.cos(a1), y1 = CY + R*Math.sin(a1);
+      const large = (a1 - a0) > Math.PI ? 1 : 0;
+      segs += `<path d="M ${CX} ${CY} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z" fill="${colors[i]}"></path>`;
+      a0 = a1;
+    }
+    wrap.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${segs}</svg>`;
+
+    const idx = Array.from({length:n}, (_,i)=>i).sort((a,b)=>vals[b]-vals[a]);
+    const ul = document.getElementById('vol_legend');
+    ul.innerHTML = idx.map(i => {
+      const share = vals[i] / total;
+      return `<li style="display:flex;align-items:center;gap:8px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]}"></span>
+        <span style="flex:1">${dtx[i]}</span>
+        <span><b>${fmt0(vals[i])}</b> . ${pct(share)}</span>
+      </li>`;
+    }).join('');
+
+    const maxShare = Math.max(...vals) / total;
+    document.getElementById('vol_summary').textContent =
+      `Last ${n} sessions . Total volume ${fmt0(total)} . Top session share ${pct(maxShare)}`;
+  }
+
+  function redraw(){ drawSparkline(); drawPie(); }
+  window.addEventListener('load', redraw);
+  window.addEventListener('resize', redraw);
+</script>
+
+{% endblock %}

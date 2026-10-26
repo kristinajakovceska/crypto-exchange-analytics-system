@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set title = symbol ~ " sentiment" %}
+{% block content %}
+
+<h1 class="page-title">On-chain & Sentiment</h1>
+
+<!-- Header -->
+<div class="card" style="margin-bottom:16px">
+  <div style="font-size:18px">
+    <b>Symbol.</b> {{ symbol }}
+  </div>
+  <div class="muted small">Combines news sentiment (VADER) with on-chain metrics (NVT, MVRV).</div>
+</div>
+
+{% set oc = oc_latest or {} %}
+
+<div class="grid-3">
+  <!-- Sentiment + pie -->
+  <div class="card">
+    <div class="muted small">Sentiment (avg compound)</div>
+    <div style="font-size:28px"><b>{{ '%.3f'|format(sentiment) if sentiment is number else 'n/a' }}</b></div>
+    <canvas id="pie" width="260" height="180"></canvas>
+  </div>
+
+  <!-- On-chain snapshot -->
+  <div class="card">
+    <div class="muted small">On-chain snapshot</div>
+    <table class="compact">
+      <tbody>
+        <tr><td>NVT</td>
+            <td style="text-align:right"><b>{{ nvt if nvt is not none else 'None' }}</b></td></tr>
+        <tr><td>MVRV</td>
+            <td style="text-align:right"><b>{{ mvrv if mvrv is not none else 'None' }}</b></td></tr>
+
+        <tr><td>Active addresses</td>
+            <td style="text-align:right">{{ oc.get('active_addresses', 'n/a') }}</td></tr>
+        <tr><td>Tx count</td>
+            <td style="text-align:right">{{ oc.get('tx_count', 'n/a') }}</td></tr>
+        <tr><td>Exchange in/out</td>
+            <td style="text-align:right">
+              {{ oc.get('exchange_in', 'n/a') }} / {{ oc.get('exchange_out', 'n/a') }}
+            </td></tr>
+        <tr><td>Whale txs</td>
+            <td style="text-align:right">{{ oc.get('whale_txs', 'n/a') }}</td></tr>
+        <tr><td>Hash rate</td>
+            <td style="text-align:right">{{ oc.get('hash_rate', 'n/a') }}</td></tr>
+        <tr><td>TVL</td>
+            <td style="text-align:right">{{ oc.get('tvl', 'n/a') }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Combined score -->
+  <div class="card">
+    <div class="muted small">Combined score</div>
+    <div style="font-size:36px"><b>{{ '%.2f'|format(combined) if combined is number else 'n/a' }}</b></div>
+    <div class="muted small">[-1..1]. Higher is more bullish (heuristic fusion).</div>
+  </div>
+</div>
+
+<!-- Headlines -->
+<div class="card" style="margin-top:16px">
+  <div class="muted small">Recent headlines</div>
+  <table>
+    <thead><tr><th>Time</th><th>Title</th><th style="text-align:right">Score</th></tr></thead>
+    <tbody>
+    {% if news and news|length > 0 %}
+      {% for r in news %}
+      <tr>
+        <td>{{ r.ts|default('') }}</td>
+        <td>{{ r.title|default('') }}</td>
+        <td style="text-align:right">
+          {% if r.compound is number %}{{ '%.3f'|format(r.compound) }}{% else %}n/a{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="3" class="muted">No headlines found. Run the job script to populate sentiment data.</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Tiny pie chart without external libs -->
+<script>
+  const pieData = pie | tojson;
+  const c = document.getElementById('pie');
+  const ctx = c.getContext('2d');
+
+  const pos = Number(pieData.pos || 0);
+  const neu = Number(pieData.neu || 0);
+  const neg = Number(pieData.neg || 0);
+  const total = pos + neu + neg;
+
+  if (total > 0) {
+    const vals = [pos, neu, neg];
+    const labels = ["Positive","Neutral","Negative"];
+    const colors = ["#0d5f5a","#d1d5db","#e76f51"];
+    const cx = c.width/2, cy = c.height/2, r = Math.min(cx, cy) - 10;
+    let start = -Math.PI/2;
+
+    for (let i=0;i<vals.length;i++){
+      const angle = 2*Math.PI * (vals[i]/total);
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,start,start+angle);
+      ctx.closePath();
+      ctx.fillStyle = colors[i];
+      ctx.fill();
+      start += angle;
+    }
+
+    ctx.fillStyle = "#0d5f5a";
+    ctx.font = "12px Inter, system-ui";
+    ctx.fillText(labels[0]+": "+pos.toFixed(0), 10, c.height-48);
+    ctx.fillText(labels[1]+": "+neu.toFixed(0), 10, c.height-32);
+    ctx.fillText(labels[2]+": "+neg.toFixed(0), 10, c.height-16);
+  } else {
+    ctx.fillStyle = "#0d5f5a";
+    ctx.font = "12px Inter, system-ui";
+    ctx.fillText("No sentiment data. Run jobs/compute_sentiment_onchain.py", 10, 20);
+  }
+</script>
+
+{% endblock %}

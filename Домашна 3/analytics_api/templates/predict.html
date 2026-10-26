@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% set title = symbol ~ " forecast" %}
+{% block content %}
+
+<h1 class="page-title">LSTM Forecast</h1>
+
+<div class="card" style="display:flex;gap:16px;align-items:center;justify-content:space-between">
+  <div><b>Symbol.</b> {{ symbol }}</div>
+  <div><b>Lookback.</b> {{ lookback }} days</div>
+  <div><b>Horizon.</b> {{ horizon }} steps</div>
+</div>
+
+<div class="grid-3" style="margin-top:12px">
+  <div class="card">
+    <div class="muted small">RMSE</div>
+    <div style="font-size:22px"><b>{{ '%.4f'|format(metrics.rmse) }}</b></div>
+  </div>
+  <div class="card">
+    <div class="muted small">MAPE</div>
+    <div style="font-size:22px"><b>{{ '%.2f'|format(metrics.mape) }}%</b></div>
+  </div>
+  <div class="card">
+    <div class="muted small">R²</div>
+    <div style="font-size:22px"><b>{{ '%.4f'|format(metrics.r2) }}</b></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px">
+  <div class="muted small">Forecast (next {{ horizon }} steps)</div>
+  <canvas id="fc" width="900" height="260"></canvas>
+</div>
+
+<div class="card" style="margin-top:12px">
+  <table>
+    <thead><tr><th>#</th><th>Predicted Close</th></tr></thead>
+    <tbody>
+    {% for v in forecast %}
+      <tr><td>{{ loop.index }}</td><td>{{ '%.4f'|format(v) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  const data = forecast | tojson;
+  const c = document.getElementById('fc');
+  const ctx = c.getContext('2d');
+
+  const pad = 24;
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+  if (!data || data.length === 0) { ctx.fillText("No forecast data", 10, 20); return; }
+
+  const min = Math.min(...data), max = Math.max(...data);
+  const xs = (i) => pad + (W - 2*pad) * (i / (data.length - 1));
+  const ys = (v) => H - pad - (H - 2*pad) * ((v - min) / Math.max(1e-9, (max - min)));
+
+  // axes
+  ctx.strokeStyle = '#d1d5db';
+  ctx.beginPath();
+  ctx.moveTo(pad, pad); ctx.lineTo(pad, H - pad); ctx.lineTo(W - pad, H - pad);
+  ctx.stroke();
+
+  // line
+  ctx.beginPath();
+  ctx.moveTo(xs(0), ys(data[0]));
+  for (let i = 1; i < data.length; i++) ctx.lineTo(xs(i), ys(data[i]));
+  ctx.strokeStyle = '#0d5f5a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // points
+  ctx.fillStyle = '#0d5f5a';
+  for (let i = 0; i < data.length; i++) {
+    ctx.beginPath();
+    ctx.arc(xs(i), ys(data[i]), 2.5, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  // labels
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '12px Inter, system-ui, sans-serif';
+  ctx.fillText(max.toFixed(2), 6, ys(max)+4);
+  ctx.fillText(min.toFixed(2), 6, ys(min)+4);
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set title = "Symbols" %}
+{% block content %}
+
+  <h1 class="page-title">Available symbols</h1>
+
+  <form class="search" method="get" action="{{ url_for('symbols_page') }}">
+    <span aria-hidden="true">🔍</span>
+    <input type="text" name="q" placeholder="Search" value="{{ q }}">
+    {% if q %}
+      <a class="pill light" href="{{ url_for('symbols_page') }}">Clear</a>
+    {% endif %}
+    <button class="pill action" type="submit">Search</button>
+  </form>
+
+  <div class="table card" style="padding:0;">
+    <table aria-label="Symbols table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Base asset</th>
+          <th>Quote asset</th>
+          <th>First date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if items and items|length > 0 %}
+          {% for it in items %}
+          <tr>
+            <td>
+              <a class="badge" href="{{ url_for('symbol_detail_page', symbol=it.symbol) }}">
+                {{ it.symbol }}
+              </a>
+            </td>
+            <td class="strong">{{ it.base }}</td>
+            <td>{{ it.quote }}</td>
+            <td>{{ it.first_date }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="muted" style="padding:18px">No results.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

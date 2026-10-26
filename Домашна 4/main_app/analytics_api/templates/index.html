@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% set title = "Home" %}
+{% block content %}
+
+<!-- Header with wide logo -->
+<div class="home-hero">
+  <img class="home-hero-logo" src="/static/brand/logo-full.jpg"
+       alt="Crypto Exchange Analytics System">
+</div>
+
+<!-- Top info cards -->
+<div class="home-info-grid">
+  <section class="card info-card">
+    <div class="info-card-title">Database Overview</div>
+    <ul class="info-list">
+      <li><span>Total candles.</span> {{ "{:,}".format(total_candles) }}</li>
+      <li><span>Total symbols.</span> {{ "{:,}".format(total_symbols) }}</li>
+      <li>
+        <span>Date range.</span>
+        {% if first_date and last_date %}
+          {{ first_date }} .. {{ last_date }}
+        {% else %}
+          2015 .. 2025
+        {% endif %}
+      </li>
+    </ul>
+  </section>
+
+  <section class="card info-card">
+    <div class="info-card-title">Quick Links</div>
+    <ul class="links-list">
+      <li><a href="{{ url_for('symbols_page') }}">Browse&nbsp;Symbols</a></li>
+      <li><a href="/docs">API&nbsp;Documentation</a></li>
+    </ul>
+    <a class="btn-download" href="{{ url_for('download_db') }}">Download SQLite DB</a>
+    <a class="btn-download" href="{{ url_for('login_page') }}">Login</a>
+  </section>
+</div>
+
+<h2 class="section-heading">Latest Market Insights</h2>
+
+<!-- Insight cards (sparkline + % change) -->
+<div class="insights-grid">
+  <div class="insight card">
+    <div class="insight-header">
+      <span class="ticker">BTC</span>
+      <span class="change up">+4.7%</span>
+    </div>
+    <canvas class="spark" id="spark-btc"></canvas>
+  </div>
+
+  <div class="insight card">
+    <div class="insight-header">
+      <span class="ticker">BNB</span>
+      <span class="change down">-0.8%</span>
+    </div>
+    <canvas class="spark" id="spark-bnb"></canvas>
+  </div>
+
+  <div class="insight card">
+    <div class="insight-header">
+      <span class="ticker">ETH</span>
+      <span class="change up">+2.1%</span>
+    </div>
+    <canvas class="spark" id="spark-eth"></canvas>
+  </div>
+</div>
+
+<!-- Tiny sparklines. No libraries. -->
+<script>
+  function drawSpark(canvasId, series, colorStroke, colorFill) {
+    const el = document.getElementById(canvasId);
+    const dpr = window.devicePixelRatio || 1;
+    const w = el.clientWidth || 220;
+    const h = el.clientHeight || 120;
+    el.width = Math.max(1, Math.floor(w * dpr));
+    el.height = Math.max(1, Math.floor(h * dpr));
+    const ctx = el.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const P = 8;
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    const span = (max - min) || 1;
+    const step = (w - 2*P) / Math.max(1, series.length - 1);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.beginPath();
+    series.forEach((v, i) => {
+      const x = P + i*step;
+      const y = h - P - ((v - min) / span) * (h - 2*P);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(w - P, h - P);
+    ctx.lineTo(P, h - P);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, P, 0, h - P);
+    grad.addColorStop(0, colorFill);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    series.forEach((v, i) => {
+      const x = P + i*step;
+      const y = h - P - ((v - min) / span) * (h - 2*P);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = colorStroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  const btc = [12,13,13.5,14,15,16,16.5,16.2,17.2,18.1,19.1,20];
+  const bnb = [9,8.8,9.1,8.7,8.9,8.6,8.8,8.5,8.7,8.4,8.6,8.2];
+  const eth = [10,10.2,10.4,10.1,10.6,10.9,11.0,11.1,11.3,11.5,11.6,11.8];
+
+  function renderHomeSparks() {
+    drawSpark('spark-btc', btc, '#0f645f', 'rgba(15,100,95,0.15)');
+    drawSpark('spark-bnb', bnb, '#c74f4f', 'rgba(199,79,79,0.15)');
+    drawSpark('spark-eth', eth, '#0f645f', 'rgba(15,100,95,0.15)');
+  }
+  document.addEventListener('DOMContentLoaded', renderHomeSparks);
+  window.addEventListener('resize', renderHomeSparks);
+</script>
+
+{% endblock %}

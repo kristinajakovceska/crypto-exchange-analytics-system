@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% set title = symbol ~ " TA" %}
+{% block content %}
+
+<h1 class="page-title">Technical Analysis</h1>
+
+<form method="get" class="card"
+      style="display:flex;gap:12px;align-items:center;margin-bottom:14px;padding:12px 14px">
+  <div><b>Symbol.</b> {{ symbol }}</div>
+  <label for="timeframe" style="margin-left:auto">Timeframe</label>
+  <select id="timeframe" name="timeframe" class="chip">
+    <option value="1d" {{ 'selected' if timeframe == '1d' else '' }}>1 Day</option>
+    <option value="1w" {{ 'selected' if timeframe == '1w' else '' }}>1 Week</option>
+    <option value="1m" {{ 'selected' if timeframe == '1m' else '' }}>1 Month</option>
+  </select>
+  <button class="btn" type="submit">Apply</button>
+</form>
+
+{% if empty_msg %}
+  <div class="card" style="color:#8a4b4b;background:#fff3f3">
+    {{ empty_msg }}
+  </div>
+{% else %}
+  <div class="card"
+       style="display:flex;gap:18px;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px"><b>Latest signal.</b> {{ last.signal }}</div>
+    <div><b>Score.</b> {{ '%.2f'|format(last.score) }}</div>
+    <div class="muted small">Timeframe. {{ timeframe }}</div>
+  </div>
+
+  <div class="table card" style="padding:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>RSI</th>
+          <th>MACD</th>
+          <th>STO K</th>
+          <th>ADX</th>
+          <th>CCI</th>
+          <th>SMA20</th>
+          <th>SMA50</th>
+          <th>EMA12</th>
+          <th>EMA26</th>
+          <th>WMA20</th>
+          <th>BB Low</th>
+          <th>BB High</th>
+          <th>Score</th>
+          <th>Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in table %}
+        <tr>
+          <td>{{ r.date }}</td>
+
+          <td>{{ '%.2f'|format(r.rsi) if r.rsi is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.macd) if r.macd is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.stoch_k) if r.stoch_k is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.adx) if r.adx is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.cci) if r.cci is not none else '-' }}</td>
+
+          <td>{{ '%.2f'|format(r.sma20) if r.sma20 is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.sma50) if r.sma50 is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.ema12) if r.ema12 is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.ema26) if r.ema26 is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.wma20) if r.wma20 is not none else '-' }}</td>
+
+          <td>{{ '%.2f'|format(r.bb_low) if r.bb_low is not none else '-' }}</td>
+          <td>{{ '%.2f'|format(r.bb_high) if r.bb_high is not none else '-' }}</td>
+
+          <td>{{ '%.2f'|format(r.score) if r.score is not none else '-' }}</td>
+          <td><span class="chip">{{ r.signal }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% endblock %}

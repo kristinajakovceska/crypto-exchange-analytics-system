@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>Database overview</h2>
+        <p>Total candles. <strong>{{ total_candles }}</strong></p>
+        <p>Total symbols. <strong>{{ total_symbols }}</strong></p>
+        <p>Date range.
+            {% if first_date and last_date %}
+                <strong>{{ first_date }} to {{ last_date }}</strong>
+            {% else %}
+                <span class="muted">No data</span>
+            {% endif %}
+        </p>
+        <p class="muted">Source. cryptos.db generated from CryptoCompare.</p>
+    </div>
+    <div class="card">
+        <h2>Quick links</h2>
+        <ul>
+            <li><a href="/symbols">Browse symbols</a></li>
+            <li><a href="/docs">Open API documentation</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

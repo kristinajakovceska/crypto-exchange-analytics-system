@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Home</a> · Symbols
+</div>
+
+<div class="card">
+    <h2>Available symbols</h2>
+    <p>Click a symbol to see recent candles.</p>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Base asset</th>
+            <th>Quote asset</th>
+            <th>First date</th>
+            <th>Last date</th>
+            <th>Rows</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for symbol, base_asset, quote_asset, first_date, last_date, num_rows in rows %}
+        <tr>
+            <td><a href="/symbols/{{ symbol }}">{{ symbol }}</a></td>
+            <td>{{ base_asset }}</td>
+            <td>{{ quote_asset }}</td>
+            <td>{{ first_date }}</td>
+            <td>{{ last_date }}</td>
+            <td>{{ num_rows }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
